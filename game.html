@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Number Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        .message,
+        .hint {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 1em;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 1em;
+            border: none;
+            border-radius: 10px;
+            background-color: #1abc9c;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #16a085;
+        }
+
+        .attempts {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .progress-container {
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: limegreen;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <h1>🎮 Guess the Number</h1>
+        <p class="message">I'm thinking of a number between 1 and 100.</p>
+        <p class="hint">You have <span id="maxAttempts">5</span> attempts!</p>
+
+        <input type="number" id="userGuess" placeholder="Enter your guess..." min="1" max="100">
+        <button onclick="submitGuess()">Submit Guess</button>
+        <button onclick="resetGame()">🔁 Play Again</button>
+
+        <p class="attempts" id="attemptInfo">Attempt: 0/5</p>
+        <p class="message" id="feedback"></p>
+        <p class="hint" id="extraHint"></p>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+    </div>
+
+    <script>
+        let gameNum = Math.floor(Math.random() * 100) + 1;
+        let attempt = 0;
+        const maxAttempt = 5;
+
+        function submitGuess() {
+            const userInput = document.getElementById("userGuess").value;
+            const userNum = Number(userInput);
+            const feedback = document.getElementById("feedback");
+            const extraHint = document.getElementById("extraHint");
+            const attemptInfo = document.getElementById("attemptInfo");
+            const progressBar = document.getElementById("progressBar");
+
+            if (!userNum || userNum < 1 || userNum > 100) {
+                feedback.textContent = "⚠️ Please enter a number between 1 and 100.";
+                return;
+            }
+
+            const diff = Math.abs(gameNum - userNum);
+
+            // Update progress bar: closer guess = wider bar
+            const closeness = Math.max(0, 100 - diff);
+            progressBar.style.width = `${closeness}%`;
+
+            if (userNum === gameNum) {
+                feedback.textContent = `🎉 YOU WON! It was ${gameNum}`;
+                feedback.style.color = 'lime';
+                attempt++;
+                attemptInfo.textContent = `Attempt: ${attempt}/${maxAttempt}`;
+                document.getElementById("userGuess").disabled = true;
+                document.getElementById("submitBtn").disabled = true;
+                return;
+            } else {
+                if (diff <= 2) {
+                    feedback.textContent = "🎯 Very, very close!";
+                } else if (diff <= 5) {
+                    feedback.textContent = "📡 You're close! Keep trying!";
+                } else if (userNum > gameNum) {
+                    feedback.textContent = userNum - gameNum <= 10 ? "⬇️ Try lower numbers." : "🔻 Too high!";
+                } else {
+                    feedback.textContent = gameNum - userNum <= 10 ? "⬆️ Try higher numbers." : "🔺 Too low!";
+                }
+                const digits = gameNum.toString();
+                if (attempt >= 1) {
+                    if (digits.length == 2) {
+                        extraHint.textContent = `Hint: It's a ${digits.length}-digit number starting with ${digits[0]}`;
+                    } else {
+                        let lowHint = Math.max(1, (Math.floor(gameNum / 10) * 10) - 1);
+                        let highHint = Math.min(100, lowHint + 11);
+                        extraHint.textContent = `Hint: The number is between ${lowHint} and ${highHint}`;
+                    }
+                }
+
+                if (attempt >= 2) {
+                    if (gameNum >= 2) {
+                        let isPrime = true;
+                        for (let i = 2; i <= Math.sqrt(gameNum); i++) {
+                            if (gameNum % i === 0) {
+                                isPrime = false;
+                                break;
+                            }
+                        }
+                        extraHint.textContent += ` | ${isPrime ? "Prime" : `${(gameNum%2 == 0) ? "even" : "odd"}` }`;
+                    } else {
+                        extraHint.textContent += ` | It is the *Smallest Positive Integer*`
+                    }
+                }
+
+                if (attempt >= 3) {
+                    if (gameNum) {
+                        for (let i = 2; i <= 10; i++) {
+                            let squareNum = i ** 2;
+                            if (gameNum == squareNum) {
+                                extraHint.textContent = `A Perfect Square`;
+                                break;
+                            }
+                        }
+                    }  
+                    if(Math.abs(Number(digits[0]) - Number(digits[1])) === 1){
+                        extraHint.textContent = "The Last digit is adjacent to the starting digit";
+                    }
+                    if (digits[0] == digits[1]) {
+                        extraHint.textContent = `It's a Palindrome`;
+                    } else if (gameNum % 6 === 0) {
+                        extraHint.textContent += " | Divisible by 2 & 3";
+                    } else if (gameNum % 3 === 0) {
+                        extraHint.textContent += " | Divisible by 3";
+                    } else if (gameNum % 2 === 0) {
+                        let options = [gameNum - 2, gameNum, gameNum + 2];
+
+                        // Shuffle the array (Fisher-Yates shuffle)
+                        for (let i = options.length - 1; i > 0; i--) {
+                            let j = Math.floor(Math.random() * (i + 1));
+                            [options[i], options[j]] = [options[j], options[i]];
+                        }
+
+                        // Display the shuffled numbers
+                        extraHint.textContent = `Choose one of them: ${options.join(', ')}`;
+
+                    } else if (gameNum % 5 == 0) {
+                        extraHint.textContent += " | 🧩 Think of a number whose only two multiples in the range of 1–10 are itself and 10.";
+                    }
+                }
+
+                attempt++;
+                attemptInfo.textContent = `Attempt: ${attempt}/${maxAttempt}`;
+
+                if (attempt >= maxAttempt) {
+                    feedback.textContent = `💀 YOU LOSE! The number was ${gameNum}`;
+                    feedback.style.color = 'red';
+                    document.getElementById("userGuess").disabled = true;
+                    document.getElementById("submitBtn").disabled = true;
+                }
+            }
+        }
+
+        function resetGame() {
+            gameNum = Math.floor(Math.random() * 100) + 1;
+            attempt = 0;
+            document.getElementById("userGuess").value = "";
+            document.getElementById("feedback").textContent = "";
+            document.getElementById("extraHint").textContent = "";
+            document.getElementById("attemptInfo").textContent = `Attempt: 0/${maxAttempt}`;
+            document.getElementById("feedback").style.color = '#f4f4f4';
+            document.getElementById("progressBar").style.width = '0%';
+            document.getElementById("userGuess").disabled = false;
+            document.getElementById("submitBtn").disabled = false;
+        }
+    </script>
+</body>
+
+</html>
